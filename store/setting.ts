@@ -1,8 +1,6 @@
 import { create } from 'zustand'
 import { persist, type StorageValue } from 'zustand/middleware'
-import storage from '@/utils/Storage'
 import { DefaultModel } from '@/constant/model'
-import { omitBy, isFunction } from 'lodash-es'
 
 type DefaultSetting = Omit<Setting, 'isProtected' | 'talkMode' | 'sidebarState'>
 
@@ -52,19 +50,24 @@ export const useSettingStore = create(
       },
     }),
     {
-      name: 'settingStore',
+      name: 'twg-settings',
       version: 1,
       storage: {
-        getItem: async (key: string) => {
-          return await storage.getItem<StorageValue<SettingStore>>(key)
+        getItem: (key: string) => {
+          const value = localStorage.getItem(key)
+          return value ? JSON.parse(value) : null
         },
-        setItem: async (key: string, store: StorageValue<SettingStore>) => {
-          return await storage.setItem(key, {
-            state: omitBy(store.state, (item) => isFunction(item)),
-            version: store.version,
-          })
+        setItem: (key: string, value: StorageValue<SettingStore>) => {
+          const { update, reset, ...stateToSave } = value.state
+          localStorage.setItem(
+            key,
+            JSON.stringify({
+              state: stateToSave,
+              version: value.version,
+            }),
+          )
         },
-        removeItem: async (key: string) => await storage.removeItem(key),
+        removeItem: (key: string) => localStorage.removeItem(key),
       },
     },
   ),
